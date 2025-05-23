@@ -26,6 +26,7 @@ from lerobot.common.robot_devices.robots.configs import (
     So101RobotConfig,
     StretchRobotConfig,
     SharedPortRobotConfig,
+    DummyRobotConfig,
 )
 
 
@@ -68,12 +69,19 @@ def make_robot_config(robot_type: str, **kwargs) -> RobotConfig:
         return LeKiwiRobotConfig(**kwargs)
     elif robot_type == "so100_shared_port":
         return SharedPortRobotConfig(**kwargs)
+    elif robot_type == "dummy_robot":
+        return DummyRobotConfig(**kwargs)
     else:
         raise ValueError(f"Robot type '{robot_type}' is not available.")
 
 
 def make_robot_from_config(config: RobotConfig):
-    if isinstance(config, ManipulatorRobotConfig):
+    # Order matters: DummyRobotConfig is a subclass of ManipulatorRobotConfig
+    if isinstance(config, DummyRobotConfig):
+        from lerobot.common.robot_devices.robots.dummy_robot import DummyRobot
+
+        return DummyRobot(config)
+    elif isinstance(config, ManipulatorRobotConfig):
         from lerobot.common.robot_devices.robots.manipulator import ManipulatorRobot
 
         return ManipulatorRobot(config)
