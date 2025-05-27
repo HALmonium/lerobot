@@ -21,6 +21,7 @@ import draccus
 from lerobot.common.robot_devices.cameras.configs import (
     CameraConfig,
     IntelRealSenseCameraConfig,
+    NatsCameraConfig,
     OpenCVCameraConfig,
 )
 from lerobot.common.robot_devices.motors.configs import (
@@ -57,28 +58,25 @@ class ManipulatorRobotConfig(RobotConfig):
 
     mock: bool = False
 
-    def __post_init__(self):
-        if self.mock:
-            for arm in self.leader_arms.values():
-                if not arm.mock:
-                    arm.mock = True
-            for arm in self.follower_arms.values():
-                if not arm.mock:
-                    arm.mock = True
-            for cam in self.cameras.values():
-                if not cam.mock:
-                    cam.mock = True
 
-        if self.max_relative_target is not None and isinstance(self.max_relative_target, Sequence):
-            for name in self.follower_arms:
-                if len(self.follower_arms[name].motors) != len(self.max_relative_target):
-                    raise ValueError(
-                        f"len(max_relative_target)={len(self.max_relative_target)} but the follower arm with name {name} has "
-                        f"{len(self.follower_arms[name].motors)} motors. Please make sure that the "
-                        f"`max_relative_target` list has as many parameters as there are motors per arm. "
-                        "Note: This feature does not yet work with robots where different follower arms have "
-                        "different numbers of motors."
-                    )
+@RobotConfig.register_subclass("dummy_robot")
+@dataclass
+class DummyRobotConfig(ManipulatorRobotConfig):
+    """
+    A dummy robot configuration for testing with real cameras but dummy (no-op) robot actions.
+    It defaults to having no arms and no cameras, making it a minimal setup for camera tests
+    or scenarios where only camera data is needed without actual robot hardware interaction.
+    The `mock` status of the robot (and subsequently its cameras) can be set
+    during instantiation. For example:
+    `DummyRobotConfig(cameras={"test_cam": SomeCameraConfig(...)})` or
+    `DummyRobotConfig(cameras={"test_cam": SomeCameraConfig(...)}, mock=True)`
+    """
+
+    leader_arms: dict[str, MotorsBusConfig] = field(default_factory=dict)
+    follower_arms: dict[str, MotorsBusConfig] = field(default_factory=dict)
+    cameras: dict[str, CameraConfig] = field(default_factory=dict)
+    # Inherits `mock: bool = False` from ManipulatorRobotConfig.
+    # The parent's __post_init__ will handle mock propagation if self.mock is True.
 
 
 @RobotConfig.register_subclass("aloha")
